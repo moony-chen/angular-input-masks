@@ -40,6 +40,14 @@ function MoneyMaskDirective($locale, $parse) {
 							chars.splice(s + (keyCode===8?-1:0), 1, "0")
 							newValue = chars.join('')
 							newS=s
+						} else if (s === dotPos+1 && keyCode === 8) {
+							event.preventDefault()
+							event.stopPropagation()
+							newS=s-1
+							element[0].setSelectionRange(newS,newS)
+						} else if (s === dotPos-1 && keyCode === 46) {
+							event.preventDefault()
+							event.stopPropagation()
 						} else {
 							var chars = value.split('')
 							chars.splice(s + (keyCode===8?-1:0), 1)

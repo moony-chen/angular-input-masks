@@ -9,10 +9,67 @@ function preparePercentageToFormatter(value, decimals, modelMultiplier) {
 }
 
 function PercentageMaskDirective($locale) {
+	var beforeSActual;
 	return {
 		restrict: 'A',
 		require: 'ngModel',
 		link: function(scope, element, attrs, ctrl) {
+			element.on('keydown', function(event) {
+				// isBackspace = event.keyCode === '8' || event.keyCode === '46';
+				var keyCode = event.keyCode;
+				var keyChar = String.fromCharCode(keyCode);
+				var el = element[0]
+				var value = el.value
+				var dotPos = value.indexOf(".")
+				var s = el.selectionStart
+				var e = el.selectionEnd
+				var range = e > s
+				var newValue = value
+				var newS = s
+				if (keyCode === 8 || keyCode === 46) {
+					if (range) {
+						var chars = value.split('')
+						chars.splice(s, e-s)
+						newValue = chars.join('')
+						newS = s
+					} else {
+						if (s > dotPos+1) {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1, "0")
+							newValue = chars.join('')
+							newS=s+(keyCode===8?-1:0)
+						} else if (s === dotPos+1 && keyCode === 46) {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1, "0")
+							newValue = chars.join('')
+							newS=s
+						} else if (s === dotPos+1 && keyCode === 8) {
+							event.preventDefault()
+							event.stopPropagation()
+							newS=s-1
+							element[0].setSelectionRange(newS,newS)
+						} else if (s === dotPos-1 && keyCode === 46) {
+							event.preventDefault()
+							event.stopPropagation()
+						} else {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1)
+							newValue = chars.join('')
+							newS=s+(keyCode===8?-1:0)
+						}
+						
+					}
+				} else if (/\d/.test(keyChar)) {
+					var chars = value.split('')
+					chars.splice(s, e-s, keyChar)
+					newValue = chars.join('')
+					newS = s+1
+					
+				}
+				var beforeS = newValue.substring(0, newS)
+				beforeSActual = beforeS.replace(/[^\d]+/g,'')
+			});
+
 			var decimalDelimiter = $locale.NUMBER_FORMATS.DECIMAL_SEP;
 
 			var backspacePressed = false;
@@ -66,7 +123,10 @@ function PercentageMaskDirective($locale) {
 					return null;
 				}
 
-				var valueToFormat = PreFormatters.clearDelimitersAndLeadingZeros(value) || '0';
+				var valueToFormat = value.replace(/[^\d|^\.]+/g,''), formatedValue;
+				valueToFormat = (Math.floor(Number.parseFloat(valueToFormat)*100)).toFixed(0)
+
+				// var valueToFormat = PreFormatters.clearDelimitersAndLeadingZeros(value) || '0';
 				if (percentageSymbol !== '' && value.length > 1 && value.indexOf('%') === -1) {
 					valueToFormat = valueToFormat.slice(0, valueToFormat.length - 1);
 				}
@@ -90,10 +150,21 @@ function PercentageMaskDirective($locale) {
 					}
 				}
 
+				var l = beforeSActual.length
+				for(var i = 0; i<formatedValue.length && l >0; i++) {
+					if (/\d/.test(formatedValue.substring(i,i+1))) {
+						l --
+					}
+				}
+				if (formatedValue.indexOf(" %") <i) {
+					i=formatedValue.indexOf(" %");
+				}
+
 				if (ctrl.$viewValue !== formatedValue) {
 					ctrl.$setViewValue(formatedValue);
 					ctrl.$render();
 				}
+				element[0].setSelectionRange(i,i)
 
 				return actualNumber;
 			}
