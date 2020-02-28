@@ -3,8 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Angular Mask Demo</title>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-i18n/1.2.15/angular-locale_pt-br.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-i18n/1.7.9/angular-locale_en-us.js"></script>
 	<script src="../releases/angular-input-masks-dependencies.js"></script>
 	<script src="../releases/angular-input-masks.js"></script>
 	<script>
@@ -101,7 +101,7 @@
 		<span ng-bind="cpfcnpj"></span> - {{form.field13.$error}}<br>
 
 		<h2>ui-money-mask</h2>
-		<input type="text" name="field14" ng-model="defaultMoney" ui-money-mask> <br>
+		<input type="text" name="field14" ng-model="defaultMoney" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ui-money-mask> <br>
 		<span ng-bind="defaultMoney"></span> - {{form.field14.$error}}<br>
 		<input type="text" name="negativeMoney" ng-model="negativeMoney" ui-money-mask ui-negative-number> <br>
 		<span ng-bind="negativeMoney"></span> - {{form.negativeMoney.$error}}<br>

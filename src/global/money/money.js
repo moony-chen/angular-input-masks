@@ -5,10 +5,60 @@ var validators = require('../../helpers/validators');
 var PreFormatters = require('../../helpers/pre-formatters');
 
 function MoneyMaskDirective($locale, $parse) {
+	var beforeSActual;
+
 	return {
 		restrict: 'A',
 		require: 'ngModel',
 		link: function(scope, element, attrs, ctrl) {
+			element.on('keydown', function(event) {
+				// isBackspace = event.keyCode === '8' || event.keyCode === '46';
+				var keyCode = event.keyCode;
+				var keyChar = String.fromCharCode(keyCode);
+				var el = element[0]
+				var value = el.value
+				var dotPos = value.indexOf(".")
+				var s = el.selectionStart
+				var e = el.selectionEnd
+				var range = e > s
+				var newValue = value
+				var newS = s
+				if (keyCode === 8 || keyCode === 46) {
+					if (range) {
+						var chars = value.split('')
+						chars.splice(s, e-s)
+						newValue = chars.join('')
+						newS = s
+					} else {
+						if (s > dotPos+1) {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1, "0")
+							newValue = chars.join('')
+							newS=s+(keyCode===8?-1:0)
+						} else if (s === dotPos+1 && keyCode === 46) {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1, "0")
+							newValue = chars.join('')
+							newS=s
+						} else {
+							var chars = value.split('')
+							chars.splice(s + (keyCode===8?-1:0), 1)
+							newValue = chars.join('')
+							newS=s+(keyCode===8?-1:0)
+						}
+						
+					}
+				} else if (/\d/.test(keyChar)) {
+					var chars = value.split('')
+					chars.splice(s, e-s, keyChar)
+					newValue = chars.join('')
+					newS = s+1
+					if (newValue.indexOf("$ 0") === 0) newS--;
+				}
+				var beforeS = newValue.substring(0, newS)
+				beforeSActual = beforeS.replace(/[^\d]+/g,'')
+			});
+
 			var decimalDelimiter = $locale.NUMBER_FORMATS.DECIMAL_SEP,
 				thousandsDelimiter = $locale.NUMBER_FORMATS.GROUP_SEP,
 				currencySym = $locale.NUMBER_FORMATS.CURRENCY_SYM,
@@ -84,9 +134,9 @@ function MoneyMaskDirective($locale, $parse) {
 					return null;
 				}
 
-				var actualNumber = value.replace(/[^\d]+/g,''), formatedValue;
-				actualNumber = actualNumber.replace(/^[0]+([1-9])/,'$1');
-				actualNumber = actualNumber || '0';
+				var actualNumber = value.replace(/[^\d|^\.]+/g,''), formatedValue;
+				actualNumber = (Math.floor(Number.parseFloat(actualNumber)*100)).toFixed(0)
+			
 
 				if (backspacePressed && angular.isDefined(attrs.uiCurrencyAfter) && actualNumber !== 0) {
 					actualNumber = actualNumber.substring(0, actualNumber.length - 1);
@@ -111,10 +161,21 @@ function MoneyMaskDirective($locale, $parse) {
 					}
 				}
 
+				var l = beforeSActual.length
+				for(var i = 0; i<formatedValue.length && l >0; i++) {
+					if (/\d/.test(formatedValue.substring(i,i+1))) {
+						l --
+					}
+				}
+				if (i < 2) i = 2
+
+
 				if (value !== formatedValue) {
 					ctrl.$setViewValue(formatedValue);
 					ctrl.$render();
 				}
+				element[0].setSelectionRange(i,i)
+
 
 				var retValue = parseInt(formatedValue.replace(/[^\d\-]+/g,''));
 
